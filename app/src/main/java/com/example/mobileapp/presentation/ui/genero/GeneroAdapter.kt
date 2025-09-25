@@ -1,4 +1,4 @@
-package com.example.mobileapp.presentation.genero
+package com.example.mobileapp.presentation.ui.genero
 
 import android.view.LayoutInflater
 import android.view.View
@@ -9,11 +9,13 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.mobileapp.R
 import com.example.mobileapp.data.remote.model.LibroDTO
 import com.example.mobileapp.data.remote.model.genero.GeneroDTO
-import com.example.mobileapp.presentation.books.LibroAdapter
+import com.example.mobileapp.presentation.ui.libro.LibroAdapter
+import android.widget.ImageButton
 
 class GeneroAdapter(
     private val sessionId: String,
-    private val onLibroClick: (LibroDTO) -> Unit
+    private val onLibroClick: (LibroDTO) -> Unit,
+    private val onOpenGeneroDetail: (GeneroDTO) -> Unit
 ) : RecyclerView.Adapter<GeneroAdapter.GeneroVH>() {
 
     private val generos = mutableListOf<GeneroDTO>()
@@ -35,6 +37,7 @@ class GeneroAdapter(
         val tvGenero: TextView = view.findViewById(R.id.tvGenero)
         val rvLibros: RecyclerView = view.findViewById(R.id.rvLibrosGenero)
         val tvEmpty: TextView = view.findViewById(R.id.tvEmptyGenero)
+        val btnDetalle: ImageButton = view.findViewById(R.id.btnGeneroDetalle)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GeneroVH {
@@ -45,6 +48,7 @@ class GeneroAdapter(
     override fun onBindViewHolder(holder: GeneroVH, pos: Int) {
         val genero = generos[pos]
         holder.tvGenero.text = genero.nombre
+        holder.btnDetalle.setOnClickListener { onOpenGeneroDetail(genero) }
 
         val libros = genero.idGenero?.let { id -> librosPorGenero[id] } ?: emptyList()
         val adapter = LibroAdapter(sessionId, onLibroClick)

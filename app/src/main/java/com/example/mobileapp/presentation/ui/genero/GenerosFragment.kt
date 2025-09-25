@@ -1,13 +1,11 @@
-package com.example.mobileapp.presentation.genero
+package com.example.mobileapp.presentation.ui.genero
 
 import android.app.AlertDialog
 import android.content.Context
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -23,8 +21,9 @@ import com.example.mobileapp.data.repository.GeneroRepository
 import com.example.mobileapp.presentation.books.GeneroViewModel
 import com.example.mobileapp.presentation.books.GeneroViewModelFactory
 import com.example.mobileapp.presentation.logreg.LoginFragment
-import com.google.android.material.textfield.TextInputEditText
-import androidx.core.widget.addTextChangedListener
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
+import androidx.fragment.app.FragmentManager
 
 class GenerosFragment : Fragment(R.layout.fragment_generos) {
 
@@ -35,9 +34,6 @@ class GenerosFragment : Fragment(R.layout.fragment_generos) {
     private lateinit var adapter: GeneroAdapter
     private var generosCache: List<com.example.mobileapp.data.remote.model.genero.GeneroDTO> = emptyList()
     private var filtroGeneroId: Long? = null
-    private var filtroEditorial: String? = null
-    private var searchQuery: String = ""
-    private var librosMapCache: Map<Long, List<com.example.mobileapp.data.remote.model.LibroDTO>> = emptyMap()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -59,6 +55,7 @@ class GenerosFragment : Fragment(R.layout.fragment_generos) {
                     SessionStore.sessionId = null
                     SessionStore.rol = null
                     // Ir al login
+                    parentFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
                     parentFragmentManager.beginTransaction()
                         .replace(R.id.fragmentContainer, com.example.mobileapp.presentation.logreg.LoginFragment())
                         .commit()
@@ -76,16 +73,19 @@ class GenerosFragment : Fragment(R.layout.fragment_generos) {
         // Recycler + progress + filtros
         val rv = view.findViewById<RecyclerView>(R.id.rvGeneros)
         val progress = view.findViewById<ProgressBar>(R.id.progress)
-        val filterContainer = view.findViewById<LinearLayout>(R.id.filterContainer)
-        val editorialContainer = view.findViewById<LinearLayout>(R.id.editorialContainer)
-        val etSearch = view.findViewById<TextInputEditText>(R.id.etSearch)
-        val btnToggleFilters = view.findViewById<ImageButton>(R.id.btnToggleFilters)
-        val filterPanel = view.findViewById<LinearLayout>(R.id.filterPanel)
+        val filterContainer = view.findViewById<ChipGroup>(R.id.filterContainer)
 
         val sessionId = SessionStore.sessionId ?: ""
-        adapter = GeneroAdapter(sessionId) { libro ->
+        adapter = GeneroAdapter(sessionId, { libro ->
             Toast.makeText(requireContext(), "Click en ${libro.titulo}", Toast.LENGTH_SHORT).show()
             // TODO: abrir detalle del libro cuando lo tengas
+        }) { genero ->
+            // Abrir pantalla detalle del género
+            val frag = GeneroDetalleFragment.newInstance(genero.idGenero ?: -1L, genero.nombre ?: "")
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, frag)
+                .addToBackStack(null)
+                .commit()
         }
         rv.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
         rv.adapter = adapter
@@ -94,15 +94,23 @@ class GenerosFragment : Fragment(R.layout.fragment_generos) {
         viewModel.generos.observe(viewLifecycleOwner) { generos ->
             generosCache = generos
             renderChips(filterContainer, generosCache)
+            // Mostrar de inmediato las secciones visibles (aunque aún no lleguen los libros)
+            val listaMostrar = filtroGeneroId?.let { id -> generosCache.filter { it.idGenero == id } } ?: generosCache
+            adapter.submitGeneros(listaMostrar)
             // cargar libros de cada género
-            val sessionIdObs = SessionStore.sessionId ?: ""
+            val sessionIdObs = SessionStore.sessionId
+            if (sessionIdObs.isNullOrBlank()) {
+                Toast.makeText(requireContext(), "Sesión no válida. Inicia sesión de nuevo.", Toast.LENGTH_SHORT).show()
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragmentContainer, com.example.mobileapp.presentation.logreg.LoginFragment())
+                    .commit()
+                return@observe
+            }
             generos.forEach { genero -> genero.idGenero?.let { id -> viewModel.cargarLibrosPorGenero(sessionIdObs, id) } }
         }
         viewModel.librosPorGenero.observe(viewLifecycleOwner) { map ->
-            librosMapCache = map
-            // construir chips de editoriales desde libros
-            renderEditorialChips(editorialContainer, librosMapCache)
-            applyFilters()
+            // enviar libros al adapter sin filtros globales
+            map.forEach { (generoId, libros) -> adapter.submitLibros(generoId, libros) }
         }
         viewModel.loading.observe(viewLifecycleOwner) { progress.visibility = if (it) View.VISIBLE else View.GONE }
         viewModel.error.observe(viewLifecycleOwner) {
@@ -131,24 +139,13 @@ class GenerosFragment : Fragment(R.layout.fragment_generos) {
         navAdd.setOnClickListener {
             // Abrir el formulario para EMPRESA
             parentFragmentManager.beginTransaction()
-                .replace(R.id.fragmentContainer, com.example.mobileapp.presentation.libro.AddLibroFragment())
+                .replace(R.id.fragmentContainer, com.example.mobileapp.presentation.ui.libro.AddLibroFragment())
                 .addToBackStack(null)
                 .commit()
         }
 
         // Cargar datos
         viewModel.cargarGeneros(SessionStore.sessionId ?: "")
-
-        // Búsqueda de texto
-        etSearch.addTextChangedListener { editable ->
-            searchQuery = editable?.toString()?.trim().orEmpty()
-            applyFilters()
-        }
-
-        // Expandir/contraer panel de filtros
-        btnToggleFilters.setOnClickListener {
-            filterPanel.visibility = if (filterPanel.visibility == View.VISIBLE) View.GONE else View.VISIBLE
-        }
     }
 
     override fun onResume() {
@@ -157,83 +154,38 @@ class GenerosFragment : Fragment(R.layout.fragment_generos) {
         viewModel.cargarGeneros(SessionStore.sessionId ?: "")
     }
 
-    private fun renderChips(container: LinearLayout, generos: List<com.example.mobileapp.data.remote.model.genero.GeneroDTO>) {
+    private fun renderChips(container: ChipGroup, generos: List<com.example.mobileapp.data.remote.model.genero.GeneroDTO>) {
         container.removeAllViews()
+        container.isSingleSelection = true
+        container.isSelectionRequired = false
 
-        // Chip "Todos"
-        container.addView(makeChip(container, "TODOS", isSelected = (filtroGeneroId == null)) {
+        fun buildChip(text: String, checked: Boolean, onChecked: () -> Unit): Chip {
+            return Chip(requireContext()).apply {
+                this.text = text
+                isCheckable = true
+                isChecked = checked
+                isClickable = true
+                setOnClickListener { onChecked() }
+            }
+        }
+
+        // Chip "TODOS"
+        container.addView(buildChip("TODOS", filtroGeneroId == null) {
             filtroGeneroId = null
+            // actualizar lista visible
             adapter.submitGeneros(generos)
-            // actualizar selección visual
-            renderChips(container, generos)
         })
 
         // Chips por género
         generos.forEach { g ->
             val selected = (filtroGeneroId == g.idGenero)
-            container.addView(makeChip(container, g.nombre, isSelected = selected) {
-                filtroGeneroId = if (selected) null else g.idGenero
-                renderChips(container, generos)
-                applyFilters()
+            container.addView(buildChip(g.nombre, selected) {
+                filtroGeneroId = g.idGenero
+                val listaMostrar = generos.filter { it.idGenero == g.idGenero }
+                adapter.submitGeneros(listaMostrar)
             })
         }
     }
 
-    private fun makeChip(parent: ViewGroup, text: String, isSelected: Boolean, onClick: () -> Unit): TextView {
-        return TextView(requireContext()).apply {
-            this.text = text
-            setPadding(24, 12, 24, 12)
-            val params = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-            params.marginEnd = 16
-            layoutParams = params
-            background = resources.getDrawable(if (isSelected) R.drawable.bg_chip_selected else R.drawable.bg_chip_unselected, null)
-            setTextColor(resources.getColor(if (isSelected) android.R.color.white else android.R.color.black, null))
-            setOnClickListener { onClick() }
-        }
-    }
-
-    private fun renderEditorialChips(container: LinearLayout, librosMap: Map<Long, List<com.example.mobileapp.data.remote.model.LibroDTO>>) {
-        container.removeAllViews()
-
-        val editoriales = librosMap.values.flatten().mapNotNull { it.editorial?.trim() }
-            .filter { it.isNotEmpty() }
-            .distinct().sorted()
-
-        // Chip "Todas"
-        container.addView(makeChip(container, "TODAS", isSelected = (filtroEditorial == null)) {
-            filtroEditorial = null
-            applyFilters()
-        })
-
-        editoriales.forEach { editorial ->
-            val selected = (filtroEditorial.equals(editorial, ignoreCase = true))
-            container.addView(makeChip(container, editorial, isSelected = selected) {
-                filtroEditorial = if (selected) null else editorial
-                applyFilters()
-            })
-        }
-    }
-
-    private fun applyFilters() {
-        val generosMostrar = filtroGeneroId?.let { id -> generosCache.filter { it.idGenero == id } } ?: generosCache
-
-        adapter.submitGeneros(generosMostrar)
-
-        generosMostrar.forEach { genero ->
-            val id = genero.idGenero ?: return@forEach
-            val originales = librosMapCache[id].orEmpty()
-            val filtrados = originales.filter { libro ->
-                val pasaEditorial = filtroEditorial?.let { ed -> (libro.editorial ?: "").equals(ed, ignoreCase = true) } ?: true
-                val q = searchQuery
-                val pasaBusqueda = if (q.isEmpty()) true else run {
-                    val t = libro.titulo ?: ""
-                    val a = libro.nombreCompletoAutor ?: ""
-                    val s = libro.sinopsis ?: ""
-                    t.contains(q, ignoreCase = true) || a.contains(q, ignoreCase = true) || s.contains(q, ignoreCase = true)
-                }
-                pasaEditorial && pasaBusqueda
-            }
-            adapter.submitLibros(id, filtrados)
-        }
-    }
+    // Removed editorial/search global filters logic
 }

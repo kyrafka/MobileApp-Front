@@ -23,6 +23,28 @@
             android:scaleType="centerCrop"
             android:src="@drawable/ic_placeholder" />
 
+        <ImageButton
+            android:id="@+id/btnEliminarLibro"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_gravity="end"
+            android:layout_marginTop="6dp"
+            android:background="@android:color/transparent"
+            android:src="@android:drawable/ic_menu_delete"
+            app:tint="#B00020"
+            android:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/btnQuitarDeGenero"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_gravity="end"
+            android:layout_marginTop="6dp"
+            android:background="@android:color/transparent"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            app:tint="#4B0082"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/tvTitulo"
             android:layout_width="match_parent"

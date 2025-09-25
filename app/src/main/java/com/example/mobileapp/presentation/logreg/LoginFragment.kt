@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
@@ -15,7 +16,7 @@ import com.example.mobileapp.data.remote.RetrofitClient
 import com.example.mobileapp.data.repository.AuthRepository
 import com.example.mobileapp.presentation.auth.AuthViewModel
 import com.example.mobileapp.presentation.auth.AuthViewModelFactory
-import com.example.mobileapp.presentation.genero.GenerosFragment
+import com.example.mobileapp.presentation.ui.genero.GenerosFragment
 
 class LoginFragment : Fragment(R.layout.fragment_login) {
 
@@ -30,6 +31,13 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         val passEt = view.findViewById<EditText>(R.id.etPassword)
         val btnLogin = view.findViewById<Button>(R.id.btnLogin)
         val btnRegister = view.findViewById<Button>(R.id.btnRegister)
+
+        // Forzar foco y mostrar teclado al abrir
+        emailEt.post {
+            emailEt.requestFocus()
+            val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.showSoftInput(emailEt, InputMethodManager.SHOW_IMPLICIT)
+        }
 
         // Botón de Login
         btnLogin.setOnClickListener {

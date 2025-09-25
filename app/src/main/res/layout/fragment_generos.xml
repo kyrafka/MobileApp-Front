@@ -37,85 +37,30 @@
             android:contentDescription="Perfil" />
     </LinearLayout>
 
-    <!-- Barra de búsqueda -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilSearch"
+    <!-- Chips de Género (únicos en Home) -->
+    <HorizontalScrollView
+        android:id="@+id/filterScroll"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="8dp"
-        android:hint="Buscar libros (título, autor, sinopsis)"
-        app:boxBackgroundMode="filled"
-        app:boxBackgroundColor="#FFFFFF"
-        app:boxStrokeColor="#4B0082"
+        android:padding="8dp"
         app:layout_constraintTop_toBottomOf="@id/headerLayout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etSearch"
-            android:layout_width="match_parent"
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/filterContainer"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:imeOptions="actionSearch"
-            android:singleLine="true"/>
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <!-- Botón hamburguesa para expandir/contraer filtros -->
-    <ImageButton
-        android:id="@+id/btnToggleFilters"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginEnd="12dp"
-        android:layout_marginTop="6dp"
-        android:background="@android:color/transparent"
-        android:contentDescription="Mostrar/Ocultar filtros"
-        android:src="@android:drawable/ic_menu_manage"
-        app:layout_constraintTop_toBottomOf="@id/tilSearch"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <!-- Panel retractil de filtros (género + editorial) -->
-    <LinearLayout
-        android:id="@+id/filterPanel"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/btnToggleFilters"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <!-- Filtros de Género -->
-        <HorizontalScrollView
-            android:id="@+id/filterScroll"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="8dp">
-            <LinearLayout
-                android:id="@+id/filterContainer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal" />
-        </HorizontalScrollView>
-
-        <!-- Filtro por editoriales -->
-        <HorizontalScrollView
-            android:id="@+id/editorialScroll"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="8dp">
-            <LinearLayout
-                android:id="@+id/editorialContainer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal" />
-        </HorizontalScrollView>
-    </LinearLayout>
+            app:singleSelection="true"
+            app:selectionRequired="false"
+            app:singleLine="true" />
+    </HorizontalScrollView>
 
     <!-- Lista de géneros y libros -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvGeneros"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/filterPanel"
+        app:layout_constraintTop_toBottomOf="@id/filterScroll"
         app:layout_constraintBottom_toTopOf="@id/bottomBar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>

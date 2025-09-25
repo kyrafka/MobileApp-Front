@@ -13,7 +13,11 @@ class WelcomeActivity : AppCompatActivity() {
         setContentView(R.layout.activity_welcome)
 
         findViewById<Button>(R.id.btnGetStarted).setOnClickListener {
-            startActivity(Intent(this, MainActivity::class.java)) // ahora apunta a MainActivity
+            val intent = Intent(this, MainActivity::class.java).apply {
+                // Asegura un arranque en frío: limpia el back stack de Welcome
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+            startActivity(intent)
             finish()
         }
     }

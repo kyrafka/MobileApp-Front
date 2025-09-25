@@ -1,4 +1,4 @@
-package com.example.mobileapp.presentation.libro
+package com.example.mobileapp.presentation.ui.libro
 
 import android.content.Context
 import android.net.Uri

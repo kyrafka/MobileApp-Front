@@ -16,6 +16,7 @@
         android:background="@drawable/bg_login_card"
         android:padding="24dp"
         android:elevation="4dp"
+        android:descendantFocusability="afterDescendants"
         android:clipToPadding="false"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -50,7 +51,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textEmailAddress"
-                android:padding="12dp"/>
+                android:padding="12dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true"/>
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Password -->
@@ -69,7 +72,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textPassword"
-                android:padding="12dp" />
+                android:padding="12dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Mensaje de error -->

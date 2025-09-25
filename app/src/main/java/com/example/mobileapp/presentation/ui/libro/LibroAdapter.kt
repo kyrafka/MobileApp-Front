@@ -1,4 +1,4 @@
-package com.example.mobileapp.presentation.books
+package com.example.mobileapp.presentation.ui.libro
 
 import android.view.LayoutInflater
 import android.view.View
@@ -11,13 +11,21 @@ import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.load.model.LazyHeaders
 import com.example.mobileapp.R
 import com.example.mobileapp.data.remote.model.LibroDTO
+import android.widget.ImageButton
 
 class LibroAdapter(
     private val sessionId: String,
-    private val onClick: (LibroDTO) -> Unit
+    private val onClick: (LibroDTO) -> Unit,
+    private val onDelete: ((LibroDTO) -> Unit)? = null,
+    private val onRemoveFromGenero: ((LibroDTO) -> Unit)? = null
 ) : RecyclerView.Adapter<LibroAdapter.LibroVH>() {
 
     private val data = mutableListOf<LibroDTO>()
+    var deleteMode: Boolean = false
+        set(value) {
+            field = value
+            notifyDataSetChanged()
+        }
 
     fun submit(items: List<LibroDTO>) {
         data.clear()
@@ -31,6 +39,8 @@ class LibroAdapter(
         val autor: TextView = view.findViewById(R.id.tvAutor)
         val sinopsis: TextView = view.findViewById(R.id.tvSinopsis)
         val estrellas: TextView = view.findViewById(R.id.tvEstrellas)
+        val btnEliminar: ImageButton = view.findViewById(R.id.btnEliminarLibro)
+        val btnQuitarDeGenero: ImageButton = view.findViewById(R.id.btnQuitarDeGenero)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LibroVH {
@@ -78,6 +88,17 @@ class LibroAdapter(
             repeat(remaining) { append('☆') }
         }.toString()
         h.estrellas.text = stars
+
+        // Delete mode
+        h.btnEliminar.visibility = if (deleteMode) View.VISIBLE else View.GONE
+        h.btnEliminar.setOnClickListener {
+            onDelete?.invoke(libro)
+        }
+
+        h.btnQuitarDeGenero.visibility = if (deleteMode) View.VISIBLE else View.GONE
+        h.btnQuitarDeGenero.setOnClickListener {
+            onRemoveFromGenero?.invoke(libro)
+        }
 
         h.itemView.setOnClickListener { onClick(libro) }
     }

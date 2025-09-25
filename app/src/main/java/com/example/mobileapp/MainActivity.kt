@@ -3,7 +3,7 @@ package com.example.mobileapp
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.example.mobileapp.presentation.logreg.LoginFragment
-import com.example.mobileapp.presentation.genero.GenerosFragment
+import com.example.mobileapp.presentation.ui.genero.GenerosFragment
 import com.example.mobileapp.data.remote.SessionStore
 
 class MainActivity : AppCompatActivity() {
